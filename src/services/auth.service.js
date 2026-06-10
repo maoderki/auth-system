@@ -282,6 +282,67 @@ class AuthService {
 
     return true;
   }
+  async logoutSession(userId, sessionId) {
+    const session = await Session.findOne({
+      _id: sessionId,
+      userId,
+      isActive: true,
+    });
+
+    if (!session) {
+      const error = new Error("AUTH_SESSION_NOT_FOUND");
+      error.code = "AUTH_SESSION_NOT_FOUND";
+      throw error;
+    }
+
+    session.isActive = false;
+    session.loggedOutAt = new Date();
+
+    await session.save();
+
+    return true;
+  }
+  async changePassword(userId, currentPassword, newPassword) {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      const error = new Error("AUTH_USER_NOT_FOUND");
+      error.code = "AUTH_USER_NOT_FOUND";
+      throw error;
+    }
+
+    const isPasswordValid = await comparePassword(
+      currentPassword,
+      user.passwordHash
+    );
+
+    if (!isPasswordValid) {
+      const error = new Error("AUTH_CURRENT_PASSWORD_INVALID");
+      error.code = "AUTH_CURRENT_PASSWORD_INVALID";
+      throw error;
+    }
+
+    user.passwordHash = await hashPassword(newPassword);
+    user.passwordChangedAt = new Date();
+    user.tokenVersion += 1;
+
+    await user.save();
+
+    await Session.updateMany(
+      {
+        userId: user._id,
+        isActive: true,
+      },
+      {
+        $set: {
+          isActive: false,
+          loggedOutAt: new Date(),
+        },
+      }
+    );
+
+    return true;
+  }
 }
 
 module.exports = new AuthService();

@@ -11,4 +11,6 @@ router.post("/logout", requireAuth, authController.logout);
 router.post("/refresh", authController.refresh);
 router.get("/sessions", requireAuth, authController.sessions);
 router.post("/logout-all", requireAuth, authController.logoutAll);
+router.delete("/sessions/:id", requireAuth, authController.logoutSession);
+router.post("/change-password", requireAuth, authController.changePassword);
 module.exports = router;

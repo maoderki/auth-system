@@ -96,6 +96,33 @@ async function logoutAll(req, res) {
   }
 }
 
+async function logoutSession(req, res) {
+  try {
+    await authService.logoutSession(req.user._id, req.params.id);
+
+    return success(res, Codes.AUTH_SESSION_LOGOUT_SUCCESS, {}, 200);
+  } catch (error) {
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 404);
+  }
+}
+
+async function changePassword(req, res) {
+  try {
+    await authService.changePassword(
+      req.user._id,
+      req.body.currentPassword,
+      req.body.newPassword
+    );
+
+    return success(res, Codes.AUTH_PASSWORD_CHANGED, {}, 200);
+  } catch (error) {
+    const status =
+      error.code === Codes.AUTH_CURRENT_PASSWORD_INVALID ? 400 : 401;
+
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, status);
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -104,4 +131,6 @@ module.exports = {
   refresh,
   sessions,
   logoutAll,
+  logoutSession,
+  changePassword,
 };
