@@ -38,6 +38,12 @@ Frontend içermez. Sadece backend authentication ve authorization altyapısı sa
 
 ✅ Response Code System
 
+✅ Request Validation
+
+✅ MongoDB Injection Protection
+
+✅ Security Headers
+
 ---
 
 # Kurulum
@@ -469,6 +475,37 @@ Hatalı cevap:
 
 ---
 
+# Validation & Security Middleware
+
+Bu auth sistemi gelen request body verilerini endpoint seviyesinde doğrular.
+
+Kullanılan güvenlik katmanları:
+
+* `zod` ile request body validation
+* `express-mongo-sanitize` ile MongoDB injection koruması
+* `helmet` ile temel HTTP security headerları
+
+Örnek validation hatası:
+
+```json
+{
+  "success": false,
+  "code": "AUTH_VALIDATION_ERROR",
+  "errors": [
+    {
+      "field": "email",
+      "message": "Invalid email address"
+    }
+  ]
+}
+```
+
+Not:
+
+Bu sistem frontend validation yerine geçmez. Frontend tarafında da kullanıcı deneyimi için ayrıca validation yapılmalıdır. Backend validation her zaman zorunlu güvenlik katmanı olarak çalışır.
+
+---
+
 # Kullanıcı Modeli
 
 Varsayılan kullanıcı alanları:
@@ -535,12 +572,23 @@ updatedAt
 * Logout All Devices
 * Single Device Logout
 * Password Change Session Invalidation
+* Request Validation (Zod)
+* MongoDB Injection Protection
+* Security Headers (Helmet)
 
 ---
 
 # Roadmap
 
 ## Güvenlik
+
+* [x] Refresh token rotation
+* [x] Session yönetimi
+* [x] Şifre değiştirme
+* [x] Tüm cihazlardan çıkış
+* [x] Request validation
+* [x] MongoDB injection koruması
+* [x] Security headers
 
 * [ ] Login deneme limiti
 * [ ] Brute-force koruması

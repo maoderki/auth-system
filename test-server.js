@@ -1,17 +1,25 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
+const mongoSanitize = require("express-mongo-sanitize");
+const helmet = require("helmet");
+
+dotenv.config();
 
 const { connectDB } = require("./src/config/db");
 const auth = require("./index");
 const env = require("./src/config/env");
 
-dotenv.config();
-
 const app = express();
 
+app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
+app.use(mongoSanitize());
+
+app.get("/ping", (req, res) => {
+  res.json({ ok: true });
+});
 
 connectDB(env.mongoUri)
   .then(() => {
@@ -22,6 +30,7 @@ connectDB(env.mongoUri)
   });
 
 app.use("/auth", auth.router);
+
 app.get(
   "/admin-test",
   auth.requireAuth,
@@ -33,8 +42,4 @@ app.get(
 
 app.listen(5050, "127.0.0.1", () => {
   console.log("TEST_SERVER_RUNNING_ON_5050");
-});
-
-app.get("/ping", (req, res) => {
-  res.json({ ok: true });
 });
