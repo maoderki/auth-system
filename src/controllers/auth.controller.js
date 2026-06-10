@@ -1,11 +1,12 @@
 const authService = require("../services/auth.service");
 const Codes = require("../constants/responseCodes");
 const { success, fail } = require("../utils/response");
+const { setRefreshCookie, clearRefreshCookie } = require("../utils/cookie");
+const env = require("../config/env");
 
 async function register(req, res) {
   try {
     const user = await authService.register(req.body);
-
     return success(res, Codes.AUTH_REGISTER_SUCCESS, { user }, 201);
   } catch (error) {
     return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 400);
@@ -23,7 +24,18 @@ async function login(req, res) {
       ipAddress: req.ip,
     });
 
-    return success(res, Codes.AUTH_LOGIN_SUCCESS, result, 200);
+    setRefreshCookie(res, result.refreshToken);
+
+    return success(
+      res,
+      Codes.AUTH_LOGIN_SUCCESS,
+      {
+        user: result.user,
+        accessToken: result.accessToken,
+        sessionId: result.sessionId,
+      },
+      200
+    );
   } catch (error) {
     return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 401);
   }
@@ -45,29 +57,34 @@ async function me(req, res) {
 async function logout(req, res) {
   try {
     await authService.logout(req.session._id);
+    clearRefreshCookie(res);
 
-    return success(
-      res,
-      Codes.AUTH_LOGOUT_SUCCESS,
-      {},
-      200
-    );
+    return success(res, Codes.AUTH_LOGOUT_SUCCESS, {}, 200);
   } catch (error) {
-    return fail(
-      res,
-      error.code || Codes.AUTH_INTERNAL_ERROR,
-      400
-    );
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 400);
   }
 }
 
 async function refresh(req, res) {
   try {
-    const refreshToken = req.body.refreshToken || req.cookies?.auth_refresh;
+    const refreshToken =
+      req.cookies?.[env.cookieName] ||
+      req.body.refreshToken;
 
     const result = await authService.refresh(refreshToken);
 
-    return success(res, Codes.AUTH_REFRESH_SUCCESS, result, 200);
+    setRefreshCookie(res, result.refreshToken);
+
+    return success(
+      res,
+      Codes.AUTH_REFRESH_SUCCESS,
+      {
+        user: result.user,
+        accessToken: result.accessToken,
+        sessionId: result.sessionId,
+      },
+      200
+    );
   } catch (error) {
     return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 401);
   }
@@ -89,6 +106,7 @@ async function sessions(req, res) {
 async function logoutAll(req, res) {
   try {
     await authService.logoutAll(req.user._id);
+    clearRefreshCookie(res);
 
     return success(res, Codes.AUTH_LOGOUT_ALL_SUCCESS, {}, 200);
   } catch (error) {
@@ -99,7 +117,6 @@ async function logoutAll(req, res) {
 async function logoutSession(req, res) {
   try {
     await authService.logoutSession(req.user._id, req.params.id);
-
     return success(res, Codes.AUTH_SESSION_LOGOUT_SUCCESS, {}, 200);
   } catch (error) {
     return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 404);
@@ -113,6 +130,8 @@ async function changePassword(req, res) {
       req.body.currentPassword,
       req.body.newPassword
     );
+
+    clearRefreshCookie(res);
 
     return success(res, Codes.AUTH_PASSWORD_CHANGED, {}, 200);
   } catch (error) {

@@ -115,7 +115,10 @@ AUTH_REFRESH_SECRET=${generateSecret()}
 AUTH_ACCESS_EXPIRES=${defaults.accessTokenExpires}
 AUTH_REFRESH_EXPIRES=${defaults.refreshTokenExpires}
 AUTH_COOKIE_NAME=${defaults.cookieName}
+AUTH_COOKIE_SECURE=false
+AUTH_COOKIE_SAMESITE=lax
 AUTH_ALLOW_REGISTRATION=${response.allowRegistration}
+AUTH_LOGIN_IDENTIFIER=${response.loginIdentifier}
 `;
 
     fs.writeFileSync(envPath, envContent);
