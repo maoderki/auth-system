@@ -73,10 +73,35 @@ async function refresh(req, res) {
   }
 }
 
+async function sessions(req, res) {
+  try {
+    const sessions = await authService.getSessions(
+      req.user._id,
+      req.session._id
+    );
+
+    return success(res, Codes.AUTH_SESSIONS_SUCCESS, { sessions }, 200);
+  } catch (error) {
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 400);
+  }
+}
+
+async function logoutAll(req, res) {
+  try {
+    await authService.logoutAll(req.user._id);
+
+    return success(res, Codes.AUTH_LOGOUT_ALL_SUCCESS, {}, 200);
+  } catch (error) {
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 400);
+  }
+}
+
 module.exports = {
   register,
   login,
   me,
   logout,
   refresh,
+  sessions,
+  logoutAll,
 };

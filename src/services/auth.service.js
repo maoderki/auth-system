@@ -164,7 +164,7 @@ class AuthService {
 
     return true;
   }
-  
+
   async refresh(refreshToken) {
     if (!refreshToken) {
       const error = new Error("AUTH_REFRESH_TOKEN_MISSING");
@@ -248,6 +248,39 @@ class AuthService {
       refreshToken: newRefreshToken,
       sessionId: session._id,
     };
+  }
+  async getSessions(userId, currentSessionId) {
+    const sessions = await Session.find({
+      userId,
+      isActive: true,
+    }).sort({ lastSeenAt: -1 });
+
+    return sessions.map(session => ({
+      id: session._id,
+      deviceId: session.deviceId,
+      deviceName: session.deviceName,
+      userAgent: session.userAgent,
+      ipAddress: session.ipAddress,
+      lastSeenAt: session.lastSeenAt,
+      createdAt: session.createdAt,
+      isCurrent: session._id.toString() === currentSessionId.toString(),
+    }));
+  }
+  async logoutAll(userId) {
+    await Session.updateMany(
+      {
+        userId,
+        isActive: true,
+      },
+      {
+        $set: {
+          isActive: false,
+          loggedOutAt: new Date(),
+        },
+      }
+    );
+
+    return true;
   }
 }
 

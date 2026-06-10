@@ -9,4 +9,6 @@ router.post("/login", authController.login);
 router.get("/me", requireAuth, authController.me);
 router.post("/logout", requireAuth, authController.logout);
 router.post("/refresh", authController.refresh);
+router.get("/sessions", requireAuth, authController.sessions);
+router.post("/logout-all", requireAuth, authController.logoutAll);
 module.exports = router;
