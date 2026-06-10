@@ -67,15 +67,49 @@ class AuthService {
       throw error;
     }
 
+    if (user.lockUntil && user.lockUntil > new Date()) {
+      const error = new Error("AUTH_ACCOUNT_LOCKED");
+      error.code = "AUTH_ACCOUNT_LOCKED";
+      throw error;
+    }
+
+    if (user.lockUntil && user.lockUntil <= new Date()) {
+      user.failedLoginAttempts = 0;
+      user.lockUntil = null;
+      await user.save();
+    }
     const isPasswordValid = await comparePassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      const error = new Error("AUTH_INVALID_CREDENTIALS");
-      error.code = "AUTH_INVALID_CREDENTIALS";
+      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+
+      if (user.failedLoginAttempts >= defaults.loginLock.maxAttempts) {
+        const lockUntil = new Date();
+        lockUntil.setMinutes(lockUntil.getMinutes() + defaults.loginLock.lockMinutes);
+
+        user.lockUntil = lockUntil;
+      }
+
+      await user.save();
+
+      const error = new Error(
+        user.lockUntil && user.lockUntil > new Date()
+          ? "AUTH_ACCOUNT_LOCKED"
+          : "AUTH_INVALID_CREDENTIALS"
+      );
+
+      error.code =
+        user.lockUntil && user.lockUntil > new Date()
+          ? "AUTH_ACCOUNT_LOCKED"
+          : "AUTH_INVALID_CREDENTIALS";
+
       throw error;
     }
 
     const now = new Date();
+
+    user.failedLoginAttempts = 0;
+    user.lockUntil = null;
 
     const tempSession = await Session.create({
       userId: user._id,

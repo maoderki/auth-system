@@ -44,6 +44,14 @@ Frontend içermez. Sadece backend authentication ve authorization altyapısı sa
 
 ✅ Security Headers
 
+✅ HttpOnly Refresh Cookie
+
+✅ Rate Limit
+
+✅ Login Attempt Lock
+
+✅ Brute-force Protection
+
 ---
 
 # Kurulum
@@ -103,11 +111,13 @@ dosyaları otomatik oluşturulur.
 
 ```js
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const auth = require("./auth-system");
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/auth", auth.router);
 ```
@@ -122,6 +132,12 @@ Login işlemi sonrasında dönen `accessToken`, korumalı endpointlerde aşağı
 Authorization: Bearer ACCESS_TOKEN
 ```
 
+Notlar:
+
+* Refresh token güvenlik amacıyla HttpOnly Cookie içerisinde saklanır.
+* Frontend uygulamaları yalnızca access token ile çalışmalıdır.
+* Refresh token yalnızca refresh endpointi tarafından kullanılır ve JavaScript tarafından erişilemez.
+ 
 ---
 
 # Auth Middleware Kullanımı
@@ -218,6 +234,7 @@ identifier alanı setup sırasında seçilen login yöntemine göre:
 
 - username
 - email
+- email veya username
 
 olabilir.
 
@@ -225,11 +242,24 @@ Response:
 
 ```json
 {
+  "user": {},
   "accessToken": "...",
-  "refreshToken": "...",
   "sessionId": "..."
 }
 ```
+
+Not:
+
+Refresh token response body içerisinde döndürülmez.
+
+Refresh token HttpOnly Cookie olarak saklanır.
+
+Login endpointinde IP bazlı rate limit ve kullanıcı bazlı hatalı giriş kilidi uygulanır.
+
+Varsayılan davranış:
+
+- 15 dakika içinde 10 login isteği IP bazlı limite takılır.
+- 5 hatalı şifre denemesinde kullanıcı hesabı 15 dakika kilitlenir.
 
 ---
 
@@ -358,24 +388,20 @@ Kullanım senaryoları:
 
 Yeni access token üretir.
 
+Refresh token HttpOnly Cookie üzerinden otomatik gönderilir.
+
 ```http
 POST /auth/refresh
 ```
 
-Body:
-
-```json
-{
-  "refreshToken": "..."
-}
-```
+Cookie gönderimi desteklemeyen istemciler için refreshToken body üzerinden de gönderilebilir.
 
 Sonuç:
 
 ```json
 {
   "accessToken": "...",
-  "refreshToken": "..."
+  "sessionId": "..."
 }
 ```
 
@@ -475,6 +501,49 @@ Hatalı cevap:
 
 ---
 
+# Rate Limit & Login Lock
+
+Auth endpointleri rate limit koruması ile çalışır.
+
+Varsayılan limitler:
+
+```txt
+/auth/*       -> 15 dakikada 100 istek
+/auth/login   -> 15 dakikada 10 istek
+```
+
+Login güvenliği:
+
+```txt
+5 hatalı şifre denemesi
+↓
+Hesap 15 dakika kilitlenir
+↓
+AUTH_ACCOUNT_LOCKED döner
+```
+
+Örnek rate limit hatası:
+
+```json
+{
+  "success": false,
+  "code": "AUTH_LOGIN_RATE_LIMIT_EXCEEDED",
+  "errors": []
+}
+```
+
+Örnek hesap kilidi hatası:
+
+```json
+{
+  "success": false,
+  "code": "AUTH_ACCOUNT_LOCKED",
+  "errors": []
+}
+```
+
+---
+
 # Validation & Security Middleware
 
 Bu auth sistemi gelen request body verilerini endpoint seviyesinde doğrular.
@@ -482,6 +551,7 @@ Bu auth sistemi gelen request body verilerini endpoint seviyesinde doğrular.
 Kullanılan güvenlik katmanları:
 
 * `zod` ile request body validation
+* Zod schema validation ile NoSQL/Mongo injection koruması
 * `express-mongo-sanitize` ile MongoDB injection koruması
 * `helmet` ile temel HTTP security headerları
 
@@ -529,6 +599,9 @@ tokenVersion
 
 createdAt
 updatedAt
+
+failedLoginAttempts
+lockUntil
 ```
 
 ---
@@ -575,6 +648,10 @@ updatedAt
 * Request Validation (Zod)
 * MongoDB Injection Protection
 * Security Headers (Helmet)
+* HttpOnly Refresh Cookie
+* Rate Limit
+* Login Attempt Lock
+* Brute-force Protection
 
 ---
 
@@ -589,9 +666,10 @@ updatedAt
 * [x] Request validation
 * [x] MongoDB injection koruması
 * [x] Security headers
+* [x] HttpOnly Refresh Cookie
+* [x] Login deneme limiti
+* [x] Brute-force koruması
 
-* [ ] Login deneme limiti
-* [ ] Brute-force koruması
 * [ ] Password reset
 * [ ] Email verification
 
@@ -606,6 +684,25 @@ updatedAt
 * [ ] Complete documentation
 * [ ] Example projects
 * [ ] One-command installation
+
+---
+
+# Production Notes
+
+Production ortamında aşağıdaki ayarlar önerilir:
+
+```env
+AUTH_COOKIE_SECURE=true
+AUTH_COOKIE_SAMESITE=lax
+```
+
+Notlar:
+
+* Production ortamında HTTPS kullanılmalıdır.
+* AUTH_COOKIE_SECURE=true kullanıldığında HTTPS gereklidir.
+* JWT secret değerleri setup sırasında otomatik oluşturulur ve `.env` dosyasına yazılır.
+* Refresh token HttpOnly Cookie içerisinde tutulur.
+* Varsayılan rate limit değerlerinin değiştirilmemesi önerilir.
 
 ---
 

@@ -3,6 +3,10 @@ const express = require("express");
 const authController = require("../controllers/auth.controller");
 const requireAuth = require("../middleware/requireAuth");
 const validate = require("../middleware/validate");
+const {
+  authRateLimit,
+  loginRateLimit,
+} = require("../middleware/rateLimit");
 
 const {
   registerSchema,
@@ -12,6 +16,7 @@ const {
 } = require("../validations/auth.validation");
 
 const router = express.Router();
+router.use(authRateLimit);
 
 router.post(
   "/register",
@@ -21,6 +26,7 @@ router.post(
 
 router.post(
   "/login",
+  loginRateLimit,
   validate(loginSchema),
   authController.login
 );

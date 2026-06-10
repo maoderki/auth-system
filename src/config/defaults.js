@@ -13,5 +13,10 @@ module.exports = {
     minLength: 8,
   },
 
+  loginLock: {
+    maxAttempts: 5,
+    lockMinutes: 15,
+  },
+
   onlineThresholdMinutes: 5,
 };

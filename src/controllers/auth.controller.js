@@ -37,7 +37,10 @@ async function login(req, res) {
       200
     );
   } catch (error) {
-    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 401);
+    const status =
+      error.code === Codes.AUTH_ACCOUNT_LOCKED ? 423 : 401;
+
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, status);
   }
 }
 
