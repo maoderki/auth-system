@@ -76,6 +76,13 @@ router.post(
   authController.changePassword
 );
 
+router.get(
+  "/admin/users",
+  requireAuth,
+  requireRole("admin"),
+  authController.listUsers
+);
+
 router.patch(
   "/admin/users/:id/roles",
   requireAuth,

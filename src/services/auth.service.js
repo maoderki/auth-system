@@ -406,6 +406,41 @@ class AuthService {
 
     return this.sanitizeUser(user);
   }
+  async listUsers({ page = 1, limit = 20, search = "" }) {
+    const safePage = Math.max(Number(page) || 1, 1);
+    const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+
+    const filter = {};
+
+    if (search) {
+      const regex = new RegExp(search.trim(), "i");
+
+      filter.$or = [
+        { username: regex },
+        { email: regex },
+        { phone: regex },
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((safePage - 1) * safeLimit)
+        .limit(safeLimit),
+
+      User.countDocuments(filter),
+    ]);
+
+    return {
+      users: users.map(user => this.sanitizeUser(user)),
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        pages: Math.ceil(total / safeLimit),
+      },
+    };
+  }
 }
 
 module.exports = new AuthService();

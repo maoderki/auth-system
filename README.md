@@ -52,6 +52,8 @@ Frontend içermez. Sadece backend authentication ve authorization altyapısı sa
 
 ✅ Brute-force Protection
 
+✅ User Listing
+
 ---
 
 # Kurulum
@@ -500,6 +502,82 @@ Notlar:
 
 ---
 
+## List Users
+
+Tüm kullanıcıları listeler.
+
+Yetki:
+
+- Giriş yapmış olmalıdır.
+- admin rolüne sahip olmalıdır.
+
+```http
+GET /auth/admin/users
+```
+
+Header:
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+Query Parametreleri:
+
+```txt
+page
+limit
+search
+```
+
+Örnek:
+
+```http
+GET /auth/admin/users?page=1&limit=20
+```
+
+Arama:
+
+```http
+GET /auth/admin/users?search=test
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_USERS_LIST_SUCCESS",
+  "data": {
+    "users": [
+      {
+        "id": "...",
+        "username": "testuser",
+        "email": "test@test.com",
+        "phone": "5551112233",
+        "roles": [
+          "user"
+        ]
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 1,
+      "pages": 1
+    }
+  }
+}
+```
+
+Notlar:
+
+* Bu endpoint yalnızca admin kullanıcılar tarafından kullanılabilir.
+* Normal kullanıcılar tüm kullanıcı listesini göremez.
+* Normal kullanıcılar yalnızca kendi bilgilerine `GET /auth/me` endpointi üzerinden erişebilir.
+* `search` parametresi username, email ve phone alanlarında arama yapar.
+
+---
+
 # Session Yönetimi
 
 ## Mevcut cihazdan çıkış
@@ -713,6 +791,7 @@ updatedAt
 * Rate Limit
 * Login Attempt Lock
 * Brute-force Protection
+* Admin Protected User Management
 
 ---
 

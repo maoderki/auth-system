@@ -166,6 +166,20 @@ async function updateUserRoles(req, res) {
   }
 }
 
+async function listUsers(req, res) {
+  try {
+    const result = await authService.listUsers({
+      page: req.query.page,
+      limit: req.query.limit,
+      search: req.query.search,
+    });
+
+    return success(res, Codes.AUTH_USERS_LIST_SUCCESS, result, 200);
+  } catch (error) {
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 400);
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -177,4 +191,5 @@ module.exports = {
   logoutSession,
   changePassword,
   updateUserRoles,
+  listUsers,
 };
