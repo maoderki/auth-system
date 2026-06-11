@@ -79,10 +79,27 @@ const updateRolesSchema = z.object({
     .max(10),
 });
 
+const updateUserSchema = z.object({
+  username: z.string().trim().min(3).max(32).regex(/^[a-zA-Z0-9._-]+$/).optional(),
+  email: z.string().trim().email().max(120).optional(),
+  phone: z.string().trim().max(30).nullable().optional(),
+});
+
+const updateUserStatusSchema = z.object({
+  isActive: z.boolean(),
+});
+
+const adminUpdatePasswordSchema = z.object({
+  newPassword: z.string().min(8).max(128),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
   refreshSchema,
   changePasswordSchema,
   updateRolesSchema,
+  updateUserSchema,
+  updateUserStatusSchema,
+  adminUpdatePasswordSchema,
 };

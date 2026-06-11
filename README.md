@@ -54,6 +54,8 @@ Frontend içermez. Sadece backend authentication ve authorization altyapısı sa
 
 ✅ User Listing
 
+✅ User Management
+
 ---
 
 # Kurulum
@@ -578,6 +580,225 @@ Notlar:
 
 ---
 
+## Get User Detail
+
+Belirli bir kullanıcının detay bilgilerini getirir.
+
+Yetki:
+
+- Giriş yapmış olmalıdır.
+- admin rolüne sahip olmalıdır.
+
+```http
+GET /auth/admin/users/:id
+```
+
+Header:
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_USER_DETAIL_SUCCESS",
+  "data": {
+    "user": {
+      "id": "...",
+      "username": "testuser",
+      "email": "test@test.com",
+      "phone": "5551112233",
+      "roles": ["user"]
+    }
+  }
+}
+```
+
+---
+
+## Update User
+
+Kullanıcının profil bilgilerini günceller.
+
+Yetki:
+
+- Giriş yapmış olmalıdır.
+- admin rolüne sahip olmalıdır.
+
+```http
+PATCH /auth/admin/users/:id
+```
+
+Header:
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+Body:
+
+```json
+{
+  "username": "newusername",
+  "email": "newmail@test.com",
+  "phone": "5559998877"
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_USER_UPDATED"
+}
+```
+
+Notlar:
+
+* Kullanıcının email adresi değiştirilebilir.
+* Kullanıcının username değeri değiştirilebilir.
+* Kullanıcının telefon bilgisi değiştirilebilir.
+* Email ve username alanları benzersiz olmalıdır.
+* Güncelleme sonrasında kullanıcının aktif sessionları sonlandırılır.
+
+---
+
+## Update User Status
+
+Kullanıcıyı aktif veya pasif duruma getirir.
+
+Yetki:
+
+- Giriş yapmış olmalıdır.
+- admin rolüne sahip olmalıdır.
+
+```http
+PATCH /auth/admin/users/:id/status
+```
+
+Header:
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+Body:
+
+```json
+{
+  "isActive": false
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_USER_STATUS_UPDATED"
+}
+```
+
+Notlar:
+
+* isActive=true → kullanıcı aktif olur.
+* isActive=false → kullanıcı pasif olur.
+* Pasif yapılan kullanıcı giriş yapamaz.
+* Pasif yapılan kullanıcının aktif sessionları sonlandırılır.
+
+---
+
+## Reset User Password
+
+Bir kullanıcının şifresini admin tarafından sıfırlar.
+
+Yetki:
+
+- Giriş yapmış olmalıdır.
+- admin rolüne sahip olmalıdır.
+
+```http
+PATCH /auth/admin/users/:id/password
+```
+
+Header:
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+Body:
+
+```json
+{
+  "newPassword": "123456789"
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_USER_PASSWORD_UPDATED"
+}
+```
+
+Notlar:
+
+* Admin mevcut şifreyi bilmek zorunda değildir.
+* Şifre sıfırlandıktan sonra kullanıcının tüm aktif sessionları sonlandırılır.
+* Kullanıcı yeniden giriş yapmak zorundadır.
+
+---
+
+## Update My Profile
+
+Giriş yapan kullanıcının kendi profil bilgilerini günceller.
+
+```http
+PATCH /auth/me
+```
+
+Header:
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+Body:
+
+```json
+{
+  "username": "newusername",
+  "email": "newmail@test.com",
+  "phone": "5551112233"
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_PROFILE_UPDATED"
+}
+```
+
+Notlar:
+
+* Kullanıcı yalnızca kendi profilini güncelleyebilir.
+* Kullanıcı rol değiştiremez.
+* Kullanıcı aktiflik durumunu değiştiremez.
+* Email ve username alanları benzersiz olmalıdır.
+* Güncelleme sonrasında aktif sessionlar sonlandırılır ve yeniden giriş yapılması gerekir.
+
+---
+
 # Session Yönetimi
 
 ## Mevcut cihazdan çıkış
@@ -816,6 +1037,7 @@ updatedAt
 ## Yetkilendirme
 
 * [x] Role management
+* [x] User management
 * [ ] Permission middleware
 * [ ] Advanced role management
 

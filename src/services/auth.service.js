@@ -441,6 +441,113 @@ class AuthService {
       },
     };
   }
+  async getUserById(userId) {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      const error = new Error("AUTH_USER_NOT_FOUND");
+      error.code = "AUTH_USER_NOT_FOUND";
+      throw error;
+    }
+
+    return this.sanitizeUser(user);
+  }
+
+  async updateUser(userId, data) {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      const error = new Error("AUTH_USER_NOT_FOUND");
+      error.code = "AUTH_USER_NOT_FOUND";
+      throw error;
+    }
+
+    if (data.email) {
+      const email = data.email.toLowerCase();
+
+      const existingEmail = await User.findOne({
+        email,
+        _id: { $ne: user._id },
+      });
+
+      if (existingEmail) {
+        const error = new Error("AUTH_EMAIL_ALREADY_EXISTS");
+        error.code = "AUTH_EMAIL_ALREADY_EXISTS";
+        throw error;
+      }
+
+      user.email = email;
+      user.isEmailVerified = false;
+    }
+
+    if (data.username) {
+      const username = data.username.toLowerCase();
+
+      const existingUsername = await User.findOne({
+        username,
+        _id: { $ne: user._id },
+      });
+
+      if (existingUsername) {
+        const error = new Error("AUTH_USERNAME_ALREADY_EXISTS");
+        error.code = "AUTH_USERNAME_ALREADY_EXISTS";
+        throw error;
+      }
+
+      user.username = username;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, "phone")) {
+      user.phone = data.phone || null;
+    }
+
+    user.tokenVersion += 1;
+
+    await user.save();
+    await this.logoutAll(user._id);
+
+    return this.sanitizeUser(user);
+  }
+
+  async updateUserStatus(userId, isActive) {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      const error = new Error("AUTH_USER_NOT_FOUND");
+      error.code = "AUTH_USER_NOT_FOUND";
+      throw error;
+    }
+
+    user.isActive = isActive;
+    user.tokenVersion += 1;
+
+    await user.save();
+
+    if (!isActive) {
+      await this.logoutAll(user._id);
+    }
+
+    return this.sanitizeUser(user);
+  }
+
+  async adminUpdateUserPassword(userId, newPassword) {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      const error = new Error("AUTH_USER_NOT_FOUND");
+      error.code = "AUTH_USER_NOT_FOUND";
+      throw error;
+    }
+
+    user.passwordHash = await hashPassword(newPassword);
+    user.passwordChangedAt = new Date();
+    user.tokenVersion += 1;
+
+    await user.save();
+    await this.logoutAll(user._id);
+
+    return true;
+  }
 }
 
 module.exports = new AuthService();

@@ -180,6 +180,65 @@ async function listUsers(req, res) {
   }
 }
 
+async function getUser(req, res) {
+  try {
+    const user = await authService.getUserById(req.params.id);
+    return success(res, Codes.AUTH_USER_DETAIL_SUCCESS, { user }, 200);
+  } catch (error) {
+    const status = error.code === Codes.AUTH_USER_NOT_FOUND ? 404 : 400;
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, status);
+  }
+}
+
+async function updateUser(req, res) {
+  try {
+    const user = await authService.updateUser(req.params.id, req.body);
+    return success(res, Codes.AUTH_USER_UPDATED, { user }, 200);
+  } catch (error) {
+    const status = error.code === Codes.AUTH_USER_NOT_FOUND ? 404 : 400;
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, status);
+  }
+}
+
+async function updateProfile(req, res) {
+  try {
+    const user = await authService.updateUser(req.user._id, req.body);
+    clearRefreshCookie(res);
+
+    return success(res, Codes.AUTH_PROFILE_UPDATED, { user }, 200);
+  } catch (error) {
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, 400);
+  }
+}
+
+async function updateUserStatus(req, res) {
+  try {
+    const user = await authService.updateUserStatus(
+      req.params.id,
+      req.body.isActive
+    );
+
+    return success(res, Codes.AUTH_USER_STATUS_UPDATED, { user }, 200);
+  } catch (error) {
+    const status = error.code === Codes.AUTH_USER_NOT_FOUND ? 404 : 400;
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, status);
+  }
+}
+
+async function adminUpdateUserPassword(req, res) {
+  try {
+    await authService.adminUpdateUserPassword(
+      req.params.id,
+      req.body.newPassword
+    );
+
+    return success(res, Codes.AUTH_USER_PASSWORD_UPDATED, {}, 200);
+  } catch (error) {
+    const status = error.code === Codes.AUTH_USER_NOT_FOUND ? 404 : 400;
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, status);
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -192,4 +251,9 @@ module.exports = {
   changePassword,
   updateUserRoles,
   listUsers,
+  getUser,
+  updateUser,
+  updateProfile,
+  updateUserStatus,
+  adminUpdateUserPassword,
 };
