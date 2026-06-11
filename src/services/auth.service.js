@@ -377,6 +377,35 @@ class AuthService {
 
     return true;
   }
+  async updateUserRoles(userId, roles) {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      const error = new Error("AUTH_USER_NOT_FOUND");
+      error.code = "AUTH_USER_NOT_FOUND";
+      throw error;
+    }
+
+    user.roles = [...new Set(roles.map(role => role.toLowerCase()))];
+    user.tokenVersion += 1;
+
+    await user.save();
+
+    await Session.updateMany(
+      {
+        userId: user._id,
+        isActive: true,
+      },
+      {
+        $set: {
+          isActive: false,
+          loggedOutAt: new Date(),
+        },
+      }
+    );
+
+    return this.sanitizeUser(user);
+  }
 }
 
 module.exports = new AuthService();

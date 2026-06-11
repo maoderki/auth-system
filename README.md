@@ -443,6 +443,63 @@ Sonuç:
 
 ---
 
+## Update User Roles
+
+Kullanıcının rollerini günceller.
+
+Yetki:
+
+- Giriş yapmış olmalıdır.
+- admin rolüne sahip olmalıdır.
+
+```http
+PATCH /auth/admin/users/:id/roles
+```
+
+Header:
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+Body:
+
+```json
+{
+  "roles": ["admin", "manager"]
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_USER_ROLE_UPDATED",
+  "data": {
+    "user": {
+      "id": "...",
+      "roles": [
+        "admin",
+        "manager"
+      ]
+    }
+  }
+}
+```
+
+Notlar:
+
+* Role isimleri auth sistemi tarafından sınırlandırılmaz.
+* Roller uygulama ihtiyaçlarına göre tanımlanabilir.
+* Gönderilen roles dizisi kullanıcının yeni rol listesi olarak kaydedilir.
+* Mevcut roller üzerine ekleme yapılmaz.
+* Bir rolü kaldırmak için yeni role listesi gönderilmelidir.
+* Rol değişikliği sonrasında kullanıcının aktif sessionları sonlandırılır.
+* Rol değişikliği sonrasında kullanıcı yeniden giriş yapmak zorundadır.
+
+---
+
 # Session Yönetimi
 
 ## Mevcut cihazdan çıkış
@@ -485,7 +542,11 @@ Başarılı cevap:
 {
   "success": true,
   "code": "AUTH_LOGIN_SUCCESS",
-  "data": {}
+  "data": {
+    "user": {},
+    "accessToken": "...",
+    "sessionId": "..."
+  }
 }
 ```
 
@@ -675,6 +736,7 @@ updatedAt
 
 ## Yetkilendirme
 
+* [x] Role management
 * [ ] Permission middleware
 * [ ] Advanced role management
 
@@ -703,6 +765,7 @@ Notlar:
 * JWT secret değerleri setup sırasında otomatik oluşturulur ve `.env` dosyasına yazılır.
 * Refresh token HttpOnly Cookie içerisinde tutulur.
 * Varsayılan rate limit değerlerinin değiştirilmemesi önerilir.
+* JWT secret ve refresh secret değerleri hiçbir zaman source code içerisine yazılmamalıdır.
 
 ---
 

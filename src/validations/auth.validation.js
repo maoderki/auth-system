@@ -66,9 +66,23 @@ const changePasswordSchema = z.object({
     .max(128),
 });
 
+const updateRolesSchema = z.object({
+  roles: z
+    .array(
+      z.string()
+        .trim()
+        .min(1)
+        .max(50)
+        .regex(/^[a-zA-Z0-9._-]+$/)
+    )
+    .min(1)
+    .max(10),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
   refreshSchema,
   changePasswordSchema,
+  updateRolesSchema,
 };

@@ -145,6 +145,27 @@ async function changePassword(req, res) {
   }
 }
 
+async function updateUserRoles(req, res) {
+  try {
+    const user = await authService.updateUserRoles(
+      req.params.id,
+      req.body.roles
+    );
+
+    return success(
+      res,
+      Codes.AUTH_USER_ROLE_UPDATED,
+      { user },
+      200
+    );
+  } catch (error) {
+    const status =
+      error.code === Codes.AUTH_USER_NOT_FOUND ? 404 : 400;
+
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, status);
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -155,4 +176,5 @@ module.exports = {
   logoutAll,
   logoutSession,
   changePassword,
+  updateUserRoles,
 };

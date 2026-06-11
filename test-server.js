@@ -31,15 +31,6 @@ connectDB(env.mongoUri)
 
 app.use("/auth", auth.router);
 
-app.get(
-  "/admin-test",
-  auth.requireAuth,
-  auth.requireRole("admin"),
-  (req, res) => {
-    res.json({ ok: true, message: "ADMIN_ACCESS_GRANTED" });
-  }
-);
-
 app.listen(5050, "127.0.0.1", () => {
   console.log("TEST_SERVER_RUNNING_ON_5050");
 });

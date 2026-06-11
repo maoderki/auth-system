@@ -2,6 +2,7 @@ const express = require("express");
 
 const authController = require("../controllers/auth.controller");
 const requireAuth = require("../middleware/requireAuth");
+const requireRole = require("../middleware/requireRole");
 const validate = require("../middleware/validate");
 const {
   authRateLimit,
@@ -13,6 +14,7 @@ const {
   loginSchema,
   refreshSchema,
   changePasswordSchema,
+  updateRolesSchema,
 } = require("../validations/auth.validation");
 
 const router = express.Router();
@@ -72,6 +74,14 @@ router.post(
   requireAuth,
   validate(changePasswordSchema),
   authController.changePassword
+);
+
+router.patch(
+  "/admin/users/:id/roles",
+  requireAuth,
+  requireRole("admin"),
+  validate(updateRolesSchema),
+  authController.updateUserRoles
 );
 
 module.exports = router;
