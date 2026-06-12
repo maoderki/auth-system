@@ -149,7 +149,7 @@ Authorization: Bearer ACCESS_TOKEN
 
 Kullanıcı bilgileri ve roller aşağıdaki endpoint üzerinden alınabilir:
 
-GET /auth/me
+GET /me
 
 ---
 
@@ -160,7 +160,7 @@ GET /auth/me
 Yeni kullanıcı oluşturur.
 
 ```http
-POST /auth/register
+POST /register
 ```
 
 Body:
@@ -181,7 +181,7 @@ Body:
 Kullanıcı girişi yapar.
 
 ```http
-POST /auth/login
+POST /login
 ```
 
 Body:
@@ -235,7 +235,7 @@ Varsayılan davranış:
 Giriş yapan kullanıcıyı döndürür.
 
 ```http
-GET /auth/me
+GET /me
 ```
 
 Header:
@@ -251,7 +251,7 @@ Authorization: Bearer ACCESS_TOKEN
 Mevcut cihazdaki oturumu kapatır.
 
 ```http
-POST /auth/logout
+POST /logout
 ```
 
 Header:
@@ -272,7 +272,7 @@ Sonuç:
 Tüm aktif cihazların oturumunu kapatır.
 
 ```http
-POST /auth/logout-all
+POST /logout-all
 ```
 
 Header:
@@ -293,7 +293,7 @@ Sonuç:
 Kullanıcının aktif cihazlarını listeler.
 
 ```http
-GET /auth/sessions
+GET /sessions
 ```
 
 Header:
@@ -323,7 +323,7 @@ Authorization: Bearer ACCESS_TOKEN
 Belirli bir cihazın oturumunu kapatır.
 
 ```http
-DELETE /auth/sessions/:id
+DELETE /sessions/:id
 ```
 
 Header:
@@ -335,7 +335,7 @@ Authorization: Bearer ACCESS_TOKEN
 Örnek:
 
 ```http
-DELETE /auth/sessions/6a2929be92cbfcb62846fc1f
+DELETE /sessions/6a2929be92cbfcb62846fc1f
 ```
 
 Sonuç:
@@ -358,7 +358,7 @@ Yeni access token üretir.
 Refresh token HttpOnly Cookie üzerinden otomatik gönderilir.
 
 ```http
-POST /auth/refresh
+POST /refresh
 ```
 
 Cookie gönderimi desteklemeyen istemciler için refreshToken body üzerinden de gönderilebilir.
@@ -384,7 +384,7 @@ Not:
 Şifre değiştirir.
 
 ```http
-POST /auth/change-password
+POST /change-password
 ```
 
 Header:
@@ -420,7 +420,7 @@ Yetki:
 - admin rolüne sahip olmalıdır.
 
 ```http
-PATCH /auth/admin/users/:id/roles
+PATCH /admin/users/:id/roles
 ```
 
 Header:
@@ -477,7 +477,7 @@ Yetki:
 - admin rolüne sahip olmalıdır.
 
 ```http
-GET /auth/admin/users
+GET /admin/users
 ```
 
 Header:
@@ -497,13 +497,13 @@ search
 Örnek:
 
 ```http
-GET /auth/admin/users?page=1&limit=20
+GET /admin/users?page=1&limit=20
 ```
 
 Arama:
 
 ```http
-GET /auth/admin/users?search=test
+GET /admin/users?search=test
 ```
 
 Response:
@@ -538,7 +538,7 @@ Notlar:
 
 * Bu endpoint yalnızca admin kullanıcılar tarafından kullanılabilir.
 * Normal kullanıcılar tüm kullanıcı listesini göremez.
-* Normal kullanıcılar yalnızca kendi bilgilerine `GET /auth/me` endpointi üzerinden erişebilir.
+* Normal kullanıcılar yalnızca kendi bilgilerine `GET /me` endpointi üzerinden erişebilir.
 * `search` parametresi username, email ve phone alanlarında arama yapar.
 
 ---
@@ -553,7 +553,7 @@ Yetki:
 - admin rolüne sahip olmalıdır.
 
 ```http
-GET /auth/admin/users/:id
+GET /admin/users/:id
 ```
 
 Header:
@@ -592,7 +592,7 @@ Yetki:
 - admin rolüne sahip olmalıdır.
 
 ```http
-PATCH /auth/admin/users/:id
+PATCH /admin/users/:id
 ```
 
 Header:
@@ -640,7 +640,7 @@ Yetki:
 - admin rolüne sahip olmalıdır.
 
 ```http
-PATCH /auth/admin/users/:id/status
+PATCH /admin/users/:id/status
 ```
 
 Header:
@@ -685,7 +685,7 @@ Yetki:
 - admin rolüne sahip olmalıdır.
 
 ```http
-PATCH /auth/admin/users/:id/password
+PATCH /admin/users/:id/password
 ```
 
 Header:
@@ -724,7 +724,7 @@ Notlar:
 Giriş yapan kullanıcının kendi profil bilgilerini günceller.
 
 ```http
-PATCH /auth/me
+PATCH /me
 ```
 
 Header:
@@ -767,7 +767,7 @@ Notlar:
 ## Mevcut cihazdan çıkış
 
 ```http
-POST /auth/logout
+POST /logout
 ```
 
 ---
@@ -775,7 +775,7 @@ POST /auth/logout
 ## Tüm cihazlardan çıkış
 
 ```http
-POST /auth/logout-all
+POST /logout-all
 ```
 
 ---
@@ -783,7 +783,7 @@ POST /auth/logout-all
 ## Belirli cihazdan çıkış
 
 ```http
-DELETE /auth/sessions/:id
+DELETE /sessions/:id
 ```
 
 ---
@@ -791,7 +791,7 @@ DELETE /auth/sessions/:id
 ## Aktif cihazları listeleme
 
 ```http
-GET /auth/sessions
+GET /sessions
 ```
 
 ---
@@ -831,8 +831,8 @@ Auth endpointleri rate limit koruması ile çalışır.
 Varsayılan limitler:
 
 ```txt
-/auth/*       -> 15 dakikada 100 istek
-/auth/login   -> 15 dakikada 10 istek
+/*       -> 15 dakikada 100 istek
+/login   -> 15 dakikada 10 istek
 ```
 
 Login güvenliği:
@@ -1019,7 +1019,7 @@ Production ortamında aşağıdaki ayarlar önerilir:
 
 ```env
 AUTH_COOKIE_SECURE=true
-AUTH_COOKIE_SAMESITE=lax
+AUTH_COOKIE_SAMESITE=none
 ```
 
 Notlar:
