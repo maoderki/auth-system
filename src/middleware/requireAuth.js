@@ -3,6 +3,7 @@ const Session = require("../models/Session");
 const Codes = require("../constants/responseCodes");
 const { fail } = require("../utils/response");
 const { verifyAccessToken } = require("../utils/jwt");
+const defaults = require("../config/defaults");
 
 async function requireAuth(req, res, next) {
   try {
@@ -17,12 +18,8 @@ async function requireAuth(req, res, next) {
 
     const user = await User.findById(decoded.sub);
 
-    if (!user) {
-      return fail(res, Codes.AUTH_USER_NOT_FOUND, 401);
-    }
-
-    if (!user.isActive) {
-      return fail(res, Codes.AUTH_USER_INACTIVE, 423);
+    if (!user || !user.isActive) {
+      return fail(res, Codes.AUTH_TOKEN_INVALID, 401);
     }
 
     if (user.tokenVersion !== decoded.tokenVersion) {
@@ -48,11 +45,17 @@ async function requireAuth(req, res, next) {
 
     const now = new Date();
 
-    user.lastSeenAt = now;
-    session.lastSeenAt = now;
+    const shouldUpdateLastSeen =
+      !user.lastSeenAt ||
+      now - user.lastSeenAt > defaults.lastSeenUpdateIntervalMs;
 
-    await user.save();
-    await session.save();
+    if (shouldUpdateLastSeen) {
+      user.lastSeenAt = now;
+      session.lastSeenAt = now;
+
+      await user.save();
+      await session.save();
+    }
 
     req.user = user;
     req.session = session;

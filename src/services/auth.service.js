@@ -4,6 +4,8 @@ const Session = require("../models/Session");
 const env = require("../config/env");
 const defaults = require("../config/defaults");
 
+const mongoose = require("mongoose");
+
 const { hashPassword, comparePassword } = require("../utils/password");
 const { sha256 } = require("../utils/hash");
 
@@ -55,15 +57,9 @@ class AuthService {
 
     const user = await User.findOne(query);
 
-    if (!user) {
+    if (!user || !user.isActive) {
       const error = new Error("AUTH_INVALID_CREDENTIALS");
       error.code = "AUTH_INVALID_CREDENTIALS";
-      throw error;
-    }
-
-    if (!user.isActive) {
-      const error = new Error("AUTH_USER_INACTIVE");
-      error.code = "AUTH_USER_INACTIVE";
       throw error;
     }
 
@@ -111,24 +107,24 @@ class AuthService {
     user.failedLoginAttempts = 0;
     user.lockUntil = null;
 
-    const tempSession = await Session.create({
+    const sessionId = new mongoose.Types.ObjectId();
+
+    const access = signAccessToken(user, sessionId);
+    const refreshToken = signRefreshToken(user, sessionId);
+
+    const session = await Session.create({
+      _id: sessionId,
       userId: user._id,
       deviceId,
       deviceName: deviceName || null,
-      refreshTokenHash: "pending",
+      refreshTokenHash: sha256(refreshToken),
+      accessTokenJti: access.jti,
       userAgent: userAgent || null,
       ipAddress: ipAddress || null,
       isActive: true,
       lastSeenAt: now,
       expiresAt: this.getRefreshExpiresAt(),
     });
-
-    const access = signAccessToken(user, tempSession._id);
-    const refreshToken = signRefreshToken(user, tempSession._id);
-
-    tempSession.refreshTokenHash = sha256(refreshToken);
-    tempSession.accessTokenJti = access.jti;
-    await tempSession.save();
 
     user.lastLoginAt = now;
     user.lastSeenAt = now;
@@ -138,7 +134,7 @@ class AuthService {
       user: this.sanitizeUser(user),
       accessToken: access.token,
       refreshToken,
-      sessionId: tempSession._id,
+      sessionId: session._id,
     };
   }
 
@@ -218,15 +214,9 @@ class AuthService {
 
     const user = await User.findById(decoded.sub);
 
-    if (!user) {
-      const error = new Error("AUTH_USER_NOT_FOUND");
-      error.code = "AUTH_USER_NOT_FOUND";
-      throw error;
-    }
-
-    if (!user.isActive) {
-      const error = new Error("AUTH_USER_INACTIVE");
-      error.code = "AUTH_USER_INACTIVE";
+    if (!user || !user.isActive) {
+      const error = new Error("AUTH_REFRESH_TOKEN_INVALID");
+      error.code = "AUTH_REFRESH_TOKEN_INVALID";
       throw error;
     }
 
@@ -236,42 +226,34 @@ class AuthService {
       throw error;
     }
 
-    const session = await Session.findOne({
-      _id: decoded.sid,
-      userId: user._id,
-      isActive: true,
-    });
+    const access = signAccessToken(user, decoded.sid);
+    const newRefreshToken = signRefreshToken(user, decoded.sid);
+
+    const session = await Session.findOneAndUpdate(
+      {
+        _id: decoded.sid,
+        userId: user._id,
+        isActive: true,
+        refreshTokenHash: sha256(refreshToken),
+        expiresAt: { $gt: new Date() },
+      },
+      {
+        $set: {
+          refreshTokenHash: sha256(newRefreshToken),
+          accessTokenJti: access.jti,
+          lastSeenAt: new Date(),
+        },
+      },
+      {
+        new: true,
+      }
+    );
 
     if (!session) {
       const error = new Error("AUTH_REFRESH_TOKEN_INVALID");
       error.code = "AUTH_REFRESH_TOKEN_INVALID";
       throw error;
     }
-
-    if (session.expiresAt < new Date()) {
-      session.isActive = false;
-      session.loggedOutAt = new Date();
-      await session.save();
-
-      const error = new Error("AUTH_REFRESH_TOKEN_EXPIRED");
-      error.code = "AUTH_REFRESH_TOKEN_EXPIRED";
-      throw error;
-    }
-
-    if (session.refreshTokenHash !== sha256(refreshToken)) {
-      const error = new Error("AUTH_REFRESH_TOKEN_INVALID");
-      error.code = "AUTH_REFRESH_TOKEN_INVALID";
-      throw error;
-    }
-
-    const access = signAccessToken(user, session._id);
-    const newRefreshToken = signRefreshToken(user, session._id);
-
-    session.refreshTokenHash = sha256(newRefreshToken);
-    session.accessTokenJti = access.jti;
-    session.lastSeenAt = new Date();
-
-    await session.save();
 
     user.lastSeenAt = new Date();
     await user.save();

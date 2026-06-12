@@ -19,4 +19,5 @@ module.exports = {
   },
 
   onlineThresholdMinutes: 5,
+  lastSeenUpdateIntervalMs: 5 * 60 * 1000,
 };

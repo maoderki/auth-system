@@ -19,6 +19,7 @@ function signAccessToken(user, sessionId, jti = createJti()) {
 
   const token = jwt.sign(payload, env.accessSecret, {
     expiresIn: env.accessExpires || defaults.accessTokenExpires,
+    algorithm: "HS256",
   });
 
   return { token, jti };
@@ -34,15 +35,20 @@ function signRefreshToken(user, sessionId) {
 
   return jwt.sign(payload, env.refreshSecret, {
     expiresIn: env.refreshExpires || defaults.refreshTokenExpires,
+    algorithm: "HS256",
   });
 }
 
 function verifyAccessToken(token) {
-  return jwt.verify(token, env.accessSecret);
+  return jwt.verify(token, env.accessSecret, {
+    algorithms: ["HS256"],
+  });
 }
 
 function verifyRefreshToken(token) {
-  return jwt.verify(token, env.refreshSecret);
+  return jwt.verify(token, env.refreshSecret, {
+    algorithms: ["HS256"],
+  });
 }
 
 module.exports = {
