@@ -8,8 +8,8 @@ const User = require("./src/models/User");
 const { connectDB, disconnectDB } = require("./src/config/db");
 const defaults = require("./src/config/defaults");
 
-const installedPath = path.join(__dirname, ".installed");
-const envPath = path.join(__dirname, ".env");
+const installedPath = path.join(process.cwd(), ".installed");
+const envPath = path.join(process.cwd(), ".env");
 
 if (fs.existsSync(installedPath)) {
   console.log("AUTH_SETUP_ALREADY_INSTALLED");
@@ -112,13 +112,21 @@ async function main() {
     const envContent = `AUTH_MONGO_URI=${response.mongoUri}
 AUTH_ACCESS_SECRET=${generateSecret()}
 AUTH_REFRESH_SECRET=${generateSecret()}
+
 AUTH_ACCESS_EXPIRES=${defaults.accessTokenExpires}
 AUTH_REFRESH_EXPIRES=${defaults.refreshTokenExpires}
+
 AUTH_COOKIE_NAME=${defaults.cookieName}
 AUTH_COOKIE_SECURE=false
 AUTH_COOKIE_SAMESITE=lax
+
 AUTH_ALLOW_REGISTRATION=${response.allowRegistration}
 AUTH_LOGIN_IDENTIFIER=${response.loginIdentifier}
+
+AUTH_PORT=4000
+AUTH_HOST=0.0.0.0
+AUTH_CORS_ORIGIN=
+AUTH_TRUST_PROXY=true
 `;
 
     fs.writeFileSync(envPath, envContent);
