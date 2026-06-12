@@ -58,7 +58,7 @@ Frontend içermez. Sadece backend authentication ve authorization altyapısı sa
 
 ---
 
-# Kurulum
+## Installation
 
 ## Gereksinimler
 
@@ -68,27 +68,22 @@ Frontend içermez. Sadece backend authentication ve authorization altyapısı sa
 
 ---
 
-## Repoyu Klonla
-
-```bash
-git clone https://github.com/maoderki/auth-system.git
-cd auth-system
-```
-
----
-
 ## Paketleri Kur
 
 ```bash
-npm install
+npm install auth-system
 ```
 
 ---
 
-## Setup Wizard Çalıştır
+## Setup Wizard
+
+Setup wizard gerekli .env dosyasını otomatik oluşturur.
+Secret değerleri otomatik üretilir.
+Admin kullanıcı setup sırasında oluşturulur.
 
 ```bash
-node setup.js
+npx auth-system-setup
 ```
 
 Kurulum sırasında aşağıdaki bilgiler sorulur:
@@ -107,24 +102,24 @@ Kurulum tamamlandıktan sonra:
 .installed
 ```
 
-dosyaları otomatik oluşturulur.
+dosyası otomatik oluşturulur.
 
----
+## Usage
 
-# Express'e Bağlama
-
-```js
-const express = require("express");
-const cookieParser = require("cookie-parser");
-const auth = require("./auth-system");
-
-const app = express();
-
-app.use(express.json());
-app.use(cookieParser());
-
-app.use("/auth", auth.router);
+```bash
+npm install auth-system
+npx auth-system-setup
+npx auth-system-start
 ```
+
+## Start Server
+
+```bash
+npx auth-system-start
+```
+
+Default URL:
+http://localhost:4000
 
 ---
 
@@ -144,49 +139,17 @@ Notlar:
  
 ---
 
-# Auth Middleware Kullanımı
+# Authorization
 
-Sadece giriş yapmış kullanıcılar erişebilir.
+Korumalı endpointlerde access token gönderilmelidir:
 
-```js
-app.get(
-  "/profile",
-  auth.requireAuth,
-  (req, res) => {
-    res.json(req.user);
-  }
-);
+```http
+Authorization: Bearer ACCESS_TOKEN
 ```
 
----
+Kullanıcı bilgileri ve roller aşağıdaki endpoint üzerinden alınabilir:
 
-# Role Middleware Kullanımı
-
-Belirli role sahip kullanıcılar erişebilir.
-
-```js
-app.get(
-  "/admin",
-  auth.requireAuth,
-  auth.requireRole("admin"),
-  (req, res) => {
-    res.json({
-      message: "Admin erişimi başarılı"
-    });
-  }
-);
-```
-
-Birden fazla role izin vermek:
-
-```js
-app.get(
-  "/support",
-  auth.requireAuth,
-  auth.requireRole("admin", "support"),
-  controller
-);
-```
+GET /auth/me
 
 ---
 
@@ -1043,7 +1006,7 @@ updatedAt
 
 ## Paketleme
 
-* [ ] NPM package
+* [x] NPM package
 * [ ] Complete documentation
 * [ ] Example projects
 * [ ] One-command installation
@@ -1063,7 +1026,7 @@ Notlar:
 
 * Production ortamında HTTPS kullanılmalıdır.
 * AUTH_COOKIE_SECURE=true kullanıldığında HTTPS gereklidir.
-* JWT secret değerleri setup sırasında otomatik oluşturulur ve `.env` dosyasına yazılır.
+* JWT secret ve refresh secret değerleri setup sırasında otomatik üretilir ve .env dosyasına yazılır.
 * Refresh token HttpOnly Cookie içerisinde tutulur.
 * Varsayılan rate limit değerlerinin değiştirilmemesi önerilir.
 * JWT secret ve refresh secret değerleri hiçbir zaman source code içerisine yazılmamalıdır.
