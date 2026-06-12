@@ -413,7 +413,8 @@ class AuthService {
     const filter = {};
 
     if (search) {
-      const regex = new RegExp(search.trim(), "i");
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, "i");
 
       filter.$or = [
         { username: regex },

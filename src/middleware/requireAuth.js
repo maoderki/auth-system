@@ -39,6 +39,13 @@ async function requireAuth(req, res, next) {
       return fail(res, Codes.AUTH_TOKEN_INVALID, 401);
     }
 
+    if (
+      session.accessTokenJti &&
+      session.accessTokenJti !== decoded.jti
+    ) {
+      return fail(res, Codes.AUTH_TOKEN_INVALID, 401);
+    }
+
     const now = new Date();
 
     user.lastSeenAt = now;
