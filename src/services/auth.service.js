@@ -104,6 +104,24 @@ class AuthService {
 
     const now = new Date();
 
+    const activeSessions = await Session.countDocuments({
+      userId: user._id,
+      isActive: true,
+    });
+
+    if (activeSessions >= defaults.maxSessionsPerUser) {
+      const oldestSession = await Session.findOne({
+        userId: user._id,
+        isActive: true,
+      }).sort({ lastSeenAt: 1, createdAt: 1 });
+
+      if (oldestSession) {
+        oldestSession.isActive = false;
+        oldestSession.loggedOutAt = now;
+        await oldestSession.save();
+      }
+    }
+
     user.failedLoginAttempts = 0;
     user.lockUntil = null;
 
