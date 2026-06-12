@@ -5,7 +5,7 @@ function setRefreshCookie(res, refreshToken) {
     httpOnly: true,
     secure: env.cookieSecure,
     sameSite: env.cookieSameSite,
-    path: "/auth/refresh",
+    path: "/",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 }
@@ -14,7 +14,7 @@ function setRefreshCookie(res, refreshToken) {
 
 function clearRefreshCookie(res) {
   res.clearCookie(env.cookieName, {
-    path: "/auth/refresh",
+    path: "/",
   });
 }
 
