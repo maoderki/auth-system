@@ -126,6 +126,42 @@ async function logoutSession(req, res) {
   }
 }
 
+async function verifyEmail(req, res) {
+  try {
+    const user = await authService.verifyEmail(req.query.token);
+
+    return success(
+      res,
+      Codes.AUTH_EMAIL_VERIFIED,
+      { user },
+      200
+    );
+  } catch (error) {
+    const status =
+      error.code === Codes.AUTH_USER_NOT_FOUND ? 404 : 400;
+
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, status);
+  }
+}
+
+async function resendVerificationEmail(req, res) {
+  try {
+    await authService.resendVerificationEmail(req.body.email);
+
+    return success(
+      res,
+      Codes.AUTH_VERIFICATION_EMAIL_SENT,
+      {},
+      200
+    );
+  } catch (error) {
+    const status =
+      error.code === Codes.AUTH_USER_NOT_FOUND ? 404 : 400;
+
+    return fail(res, error.code || Codes.AUTH_INTERNAL_ERROR, status);
+  }
+}
+
 async function changePassword(req, res) {
   try {
     await authService.changePassword(
@@ -248,6 +284,8 @@ module.exports = {
   sessions,
   logoutAll,
   logoutSession,
+  verifyEmail,
+  resendVerificationEmail,
   changePassword,
   updateUserRoles,
   listUsers,

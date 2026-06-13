@@ -56,6 +56,12 @@ Frontend içermez. Sadece backend authentication ve authorization altyapısı sa
 
 ✅ User Management
 
+✅ Email Templates
+
+✅ Email Verification
+
+✅ Verification Email Resend
+
 ---
 
 ## Installation
@@ -173,6 +179,8 @@ Body:
   "password": "12345678"
 }
 ```
+
+Kayıt sonrasında kullanıcıya doğrulama e-postası gönderilir.
 
 ---
 
@@ -376,6 +384,69 @@ Not:
 
 * Refresh token rotation kullanılır.
 * Eski refresh token tekrar kullanılamaz.
+
+---
+
+# Email Verification
+
+## Verify Email
+
+Kullanıcının e-posta adresini doğrular.
+
+```http
+GET /verify-email?token=TOKEN
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_EMAIL_VERIFIED",
+  "data": {
+    "user": {}
+  }
+}
+```
+
+Notlar:
+
+* Verify token tek kullanımlıktır.
+* Verify token hashlenmiş olarak veritabanında saklanır.
+* Varsayılan geçerlilik süresi 30 dakikadır.
+* Süresi dolan tokenlar MongoDB TTL index ile otomatik temizlenir.
+
+## Resend Verification Email
+
+Doğrulama mailini tekrar gönderir.
+
+```http
+POST /resend-verification
+```
+
+Body:
+
+```json
+{
+  "email": "test@test.com"
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_VERIFICATION_EMAIL_SENT",
+  "data": {}
+}
+```
+
+Notlar:
+
+* Sadece doğrulanmamış hesaplar için çalışır.
+* Yeni token oluşturulduğunda eski kullanılmamış tokenlar iptal edilir.
+* Kullanıcı zaten doğrulanmışsa AUTH_EMAIL_ALREADY_VERIFIED döner.
 
 ---
 
@@ -976,6 +1047,11 @@ updatedAt
 * Login Attempt Lock
 * Brute-force Protection
 * Admin Protected User Management
+* Email Verification
+* Verification Email Resend
+* Single-use Verification Tokens
+* Token Expiration
+* Token Hashing
 
 ---
 
@@ -993,9 +1069,11 @@ updatedAt
 * [x] HttpOnly Refresh Cookie
 * [x] Login deneme limiti
 * [x] Brute-force koruması
+* [x] Email verification
+* [x] Verification email resend
 
-* [ ] Password reset
-* [ ] Email verification
+* [ ] Forgot password
+* [ ] Reset password
 
 ## Yetkilendirme
 

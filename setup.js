@@ -66,17 +66,105 @@ async function main() {
           : "AUTH_ADMIN_PASSWORD_INVALID",
     },
     {
-      type: "text",
-      name: "adminPhone",
-      message: "Admin phone optional:",
-    },
-    {
       type: "toggle",
       name: "allowRegistration",
       message: "Allow public registration?",
       initial: defaults.allowRegistration,
       active: "yes",
       inactive: "no",
+    },
+    {
+      type: "toggle",
+      name: "emailVerificationEnabled",
+      message: "Enable email verification?",
+      initial: false,
+      active: "yes",
+      inactive: "no",
+    },
+    {
+      type: (_, values) =>
+        values.emailVerificationEnabled ? "select" : null,
+      name: "mailProvider",
+      message: "Mail provider:",
+      choices: [
+        { title: "Custom SMTP", value: "smtp" },
+        { title: "Gmail / Google Workspace", value: "gmail" },
+        { title: "Microsoft 365 / Exchange", value: "microsoft" },
+        { title: "Yandex Mail", value: "yandex" },
+      ],
+      initial: 0,
+    },
+    {
+      type: (prev, values) =>
+        values.emailVerificationEnabled && values.mailProvider === "smtp"
+          ? "text"
+          : null,
+      name: "mailHost",
+      message: "SMTP host:",
+    },
+    {
+      type: (prev, values) =>
+        values.emailVerificationEnabled && values.mailProvider === "smtp"
+          ? "number"
+          : null,
+      name: "mailPort",
+      message: "SMTP port:",
+      initial: 587,
+    },
+    {
+      type: (prev, values) =>
+        values.emailVerificationEnabled && values.mailProvider === "smtp"
+          ? "toggle"
+          : null,
+      name: "mailSecure",
+      message: "Use secure SMTP connection?",
+      initial: false,
+      active: "yes",
+      inactive: "no",
+    },
+    {
+      type: (_, values) =>
+        values.emailVerificationEnabled ? "text" : null,
+      name: "mailUser",
+      message: "SMTP username:",
+    },
+    {
+      type: (_, values) =>
+        values.emailVerificationEnabled ? "password" : null,
+      name: "mailPass",
+      message: "SMTP password:",
+    },
+    {
+      type: (_, values) =>
+        values.emailVerificationEnabled ? "text" : null,
+      name: "mailFromName",
+      message: "Mail from name:",
+    },
+    {
+      type: (_, values) =>
+        values.emailVerificationEnabled ? "text" : null,
+      name: "mailFromEmail",
+      message: "Mail from email:",
+      validate: value =>
+        value && value.includes("@") ? true : "AUTH_MAIL_FROM_EMAIL_INVALID",
+    },
+    {
+      type: (_, values) =>
+        values.emailVerificationEnabled ? "text" : null,
+      name: "appName",
+      message: "App name:",
+    },
+    {
+      type: (_, values) =>
+        values.emailVerificationEnabled ? "text" : null,
+      name: "frontendUrl",
+      message: "Frontend URL:",
+    },
+    {
+      type: (_, values) =>
+        values.emailVerificationEnabled ? "text" : null,
+      name: "appLogoUrl",
+      message: "App logo URL optional:",
     },
   ]);
 
@@ -103,13 +191,63 @@ async function main() {
     await User.create({
       username: response.adminUsername.toLowerCase(),
       email: response.adminEmail.toLowerCase(),
-      phone: response.adminPhone || null,
+      phone: null,
       passwordHash,
       roles: ["admin"],
       permissions: ["*"],
       isActive: true,
       isEmailVerified: true,
     });
+
+    const mailDefaults = {
+      smtp: {
+        host: response.mailHost,
+        port: response.mailPort || 587,
+        secure: response.mailSecure || false,
+      },
+      gmail: {
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+      },
+      microsoft: {
+        host: "smtp.office365.com",
+        port: 587,
+        secure: false,
+      },
+      yandex: {
+        host: "smtp.yandex.com.tr",
+        port: 587,
+        secure: false,
+      },
+    };
+
+    const selectedMail =
+      response.emailVerificationEnabled
+        ? mailDefaults[response.mailProvider]
+        : null;
+
+    const mailEnvContent = response.emailVerificationEnabled
+      ? `
+AUTH_EMAIL_VERIFICATION_ENABLED=true
+
+AUTH_MAIL_PROVIDER=${response.mailProvider}
+AUTH_MAIL_HOST=${selectedMail.host}
+AUTH_MAIL_PORT=${selectedMail.port}
+AUTH_MAIL_SECURE=${selectedMail.secure}
+AUTH_MAIL_USER=${response.mailUser}
+AUTH_MAIL_PASS=${response.mailPass}
+AUTH_MAIL_FROM_NAME=${response.mailFromName}
+AUTH_MAIL_FROM_EMAIL=${response.mailFromEmail}
+
+AUTH_APP_NAME=${response.appName}
+AUTH_APP_URL=${response.frontendUrl}
+AUTH_FRONTEND_URL=${response.frontendUrl}
+AUTH_APP_LOGO_URL=${response.appLogoUrl || ""}
+`
+      : `
+AUTH_EMAIL_VERIFICATION_ENABLED=false
+`;
 
     const envContent = `AUTH_MONGO_URI=${response.mongoUri}
 AUTH_ACCESS_SECRET=${generateSecret()}
@@ -129,6 +267,7 @@ AUTH_PORT=4000
 AUTH_HOST=0.0.0.0
 AUTH_CORS_ORIGIN=
 AUTH_TRUST_PROXY=true
+${mailEnvContent}
 `;
 
     fs.writeFileSync(envPath, envContent);

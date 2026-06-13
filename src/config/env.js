@@ -27,6 +27,19 @@ module.exports = {
   port: Number(process.env.AUTH_PORT) || defaults.port,
   host: process.env.AUTH_HOST || defaults.host,
   corsOrigin: process.env.AUTH_CORS_ORIGIN || defaults.corsOrigin,
+  appName: process.env.AUTH_APP_NAME,
+  appUrl: process.env.AUTH_APP_URL,
+  frontendUrl: process.env.AUTH_FRONTEND_URL,
+  appLogoUrl: process.env.AUTH_APP_LOGO_URL,
+  emailVerificationEnabled:
+    process.env.AUTH_EMAIL_VERIFICATION_ENABLED === "true",
+  mailHost: process.env.AUTH_MAIL_HOST,
+  mailPort: Number(process.env.AUTH_MAIL_PORT),
+  mailSecure: process.env.AUTH_MAIL_SECURE === "true",
+  mailUser: process.env.AUTH_MAIL_USER,
+  mailPass: process.env.AUTH_MAIL_PASS,
+  mailFromName: process.env.AUTH_MAIL_FROM_NAME,
+  mailFromEmail: process.env.AUTH_MAIL_FROM_EMAIL,
   trustProxy:
     process.env.AUTH_TRUST_PROXY !== undefined
       ? process.env.AUTH_TRUST_PROXY === "true"

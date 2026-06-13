@@ -18,6 +18,7 @@ const {
   updateUserSchema,
   updateUserStatusSchema,
   adminUpdatePasswordSchema,
+  resendVerificationSchema,
 } = require("../validations/auth.validation");
 
 const router = express.Router();
@@ -28,6 +29,8 @@ router.post("/login", loginRateLimit, validate(loginSchema), authController.logi
 router.get("/me", requireAuth, authController.me);
 router.post("/logout", requireAuth, authController.logout);
 router.post("/refresh", validate(refreshSchema), authController.refresh);
+router.get("/verify-email", authController.verifyEmail);
+router.post("/resend-verification", validate(resendVerificationSchema), authController.resendVerificationEmail);
 router.get("/sessions", requireAuth, authController.sessions);
 router.post("/logout-all", requireAuth, authController.logoutAll);
 router.delete("/sessions/:id", requireAuth, authController.logoutSession);

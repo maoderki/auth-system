@@ -21,4 +21,11 @@ module.exports = {
   onlineThresholdMinutes: 5,
   lastSeenUpdateIntervalMs: 5 * 60 * 1000,
   maxSessionsPerUser: 20,
+
+  verification: {
+    emailVerifyMinutes: 30,
+    passwordResetMinutes: 15,
+    smsVerifyMinutes: 5,
+    twoFactorMinutes: 2,
+  },
 };

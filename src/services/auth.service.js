@@ -1,13 +1,24 @@
 const User = require("../models/User");
 const Session = require("../models/Session");
+const VerificationToken = require("../models/VerificationToken");
 
 const env = require("../config/env");
 const defaults = require("../config/defaults");
 
+const { renderTemplate } = require("../utils/template");
+const path = require("path");
+const MailMessages = require("../constants/mailMessages");
+
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
 
 const { hashPassword, comparePassword } = require("../utils/password");
 const { sha256 } = require("../utils/hash");
+
+const {
+  generateRawToken,
+  hashToken,
+} = require("../utils/token");
 
 const {
   signAccessToken,
@@ -49,6 +60,13 @@ class AuthService {
       isEmailVerified: false,
     });
 
+    if (env.emailVerificationEnabled) {
+      try {
+        await this.sendVerificationEmail(user);
+      } catch (error) {
+        console.error("AUTH_VERIFICATION_EMAIL_SEND_FAILED", error.message);
+      }
+    }
     return this.sanitizeUser(user);
   }
 
@@ -154,6 +172,166 @@ class AuthService {
       refreshToken,
       sessionId: session._id,
     };
+  }
+
+  createMailTransporter() {
+    return nodemailer.createTransport({
+      host: env.mailHost,
+      port: env.mailPort,
+      secure: env.mailSecure,
+      auth: {
+        user: env.mailUser,
+        pass: env.mailPass,
+      },
+    });
+  }
+
+  async sendMail({ to, subject, html, text }) {
+    const transporter = this.createMailTransporter();
+
+    return transporter.sendMail({
+      from: `"${env.mailFromName}" <${env.mailFromEmail}>`,
+      to,
+      subject,
+      html,
+      text,
+    });
+  }
+
+  async createVerificationToken(userId, type, expiresInMinutes) {
+    const rawToken = generateRawToken();
+    const tokenHashValue = hashToken(rawToken);
+
+    const expiresAt = new Date(
+      Date.now() + expiresInMinutes * 60 * 1000
+    );
+
+    await VerificationToken.deleteMany({
+      userId,
+      type,
+      usedAt: null,
+    });
+
+    await VerificationToken.create({
+      userId,
+      type,
+      tokenHash: tokenHashValue,
+      expiresAt,
+    });
+
+    return rawToken;
+  }
+
+  async sendTemplateMail({ to, template, variables, subject, text }) {
+    const html = await renderTemplate(
+      path.join(__dirname, `../templates/emails/${template}.html`),
+      variables
+    );
+
+    return this.sendMail({
+      to,
+      subject,
+      html,
+      text,
+    });
+  }
+
+  async sendVerificationEmail(user) {
+    const expiresMinutes = defaults.verification.emailVerifyMinutes;
+
+    const token = await this.createVerificationToken(
+      user._id,
+      "email_verify",
+      expiresMinutes
+    );
+
+    const verifyUrl =
+      `${env.frontendUrl}/verify-email?token=${token}`;
+
+    return this.sendTemplateMail({
+      to: user.email,
+      template: "verify-email",
+      variables: {
+        logoUrl: env.appLogoUrl,
+        appName: env.appName,
+        username: user.username,
+        verifyUrl,
+        expiresMinutes,
+      },
+      subject: MailMessages.EMAIL_VERIFY.subject,
+      text: `${MailMessages.EMAIL_VERIFY.text} ${verifyUrl}`,
+    });
+  }
+
+  async verifyEmail(token) {
+    if (!env.emailVerificationEnabled) {
+      const error = new Error("AUTH_EMAIL_VERIFICATION_DISABLED");
+      error.code = "AUTH_EMAIL_VERIFICATION_DISABLED";
+      throw error;
+    }
+    const tokenHashValue = hashToken(token);
+
+    const verificationToken = await VerificationToken.findOne({
+      tokenHash: tokenHashValue,
+      type: "email_verify",
+      usedAt: null,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!verificationToken) {
+      const error = new Error("AUTH_EMAIL_VERIFY_TOKEN_INVALID");
+      error.code = "AUTH_EMAIL_VERIFY_TOKEN_INVALID";
+      throw error;
+    }
+
+    const user = await User.findById(verificationToken.userId);
+
+    if (!user) {
+      const error = new Error("AUTH_USER_NOT_FOUND");
+      error.code = "AUTH_USER_NOT_FOUND";
+      throw error;
+    }
+
+    user.isEmailVerified = true;
+    await user.save();
+
+    verificationToken.usedAt = new Date();
+    await verificationToken.save();
+
+    return this.sanitizeUser(user);
+  }
+
+  async resendVerificationEmail(email) {
+    if (!env.emailVerificationEnabled) {
+      const error = new Error("AUTH_EMAIL_VERIFICATION_DISABLED");
+      error.code = "AUTH_EMAIL_VERIFICATION_DISABLED";
+      throw error;
+    }
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+    });
+
+    if (!user) {
+      const error = new Error("AUTH_USER_NOT_FOUND");
+      error.code = "AUTH_USER_NOT_FOUND";
+      throw error;
+    }
+
+    if (!user.isActive) {
+      const error = new Error("AUTH_USER_INACTIVE");
+      error.code = "AUTH_USER_INACTIVE";
+      throw error;
+    }
+
+    if (user.isEmailVerified) {
+      const error = new Error("AUTH_EMAIL_ALREADY_VERIFIED");
+      error.code = "AUTH_EMAIL_ALREADY_VERIFIED";
+      throw error;
+    }
+
+    await this.sendVerificationEmail(user);
+
+    return true;
   }
 
   buildLoginQuery(identifier) {
