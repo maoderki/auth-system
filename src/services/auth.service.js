@@ -263,6 +263,33 @@ class AuthService {
     });
   }
 
+  async sendPasswordResetEmail(user) {
+    const expiresMinutes = defaults.verification.passwordResetMinutes;
+
+    const token = await this.createVerificationToken(
+      user._id,
+      "password_reset",
+      expiresMinutes
+    );
+
+    const resetUrl =
+      `${env.frontendUrl}/reset-password?token=${token}`;
+
+    return this.sendTemplateMail({
+      to: user.email,
+      template: "reset-password",
+      variables: {
+        logoUrl: env.appLogoUrl,
+        appName: env.appName,
+        username: user.username,
+        resetUrl,
+        expiresMinutes,
+      },
+      subject: MailMessages.PASSWORD_RESET.subject,
+      text: `${MailMessages.PASSWORD_RESET.text} ${resetUrl}`,
+    });
+  }
+
   async verifyEmail(token) {
     if (!env.emailVerificationEnabled) {
       const error = new Error("AUTH_EMAIL_VERIFICATION_DISABLED");
@@ -330,6 +357,73 @@ class AuthService {
     }
 
     await this.sendVerificationEmail(user);
+
+    return true;
+  }
+
+  async forgotPassword(email) {
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      isActive: true,
+    });
+
+    // Güvenlik için kullanıcı yoksa bile success döneceğiz
+    if (!user) {
+      return true;
+    }
+
+    await this.sendPasswordResetEmail(user);
+
+    return true;
+  }
+
+  async resetPassword(token, newPassword) {
+    const tokenHashValue = hashToken(token);
+
+    const verificationToken = await VerificationToken.findOne({
+      tokenHash: tokenHashValue,
+      type: "password_reset",
+      usedAt: null,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!verificationToken) {
+      const error = new Error("AUTH_PASSWORD_RESET_TOKEN_INVALID");
+      error.code = "AUTH_PASSWORD_RESET_TOKEN_INVALID";
+      throw error;
+    }
+
+    const user = await User.findById(
+      verificationToken.userId
+    );
+
+    if (!user) {
+      const error = new Error("AUTH_USER_NOT_FOUND");
+      error.code = "AUTH_USER_NOT_FOUND";
+      throw error;
+    }
+
+    user.passwordHash = await hashPassword(newPassword);
+    user.passwordChangedAt = new Date();
+    user.tokenVersion += 1;
+
+    await user.save();
+
+    verificationToken.usedAt = new Date();
+    await verificationToken.save();
+
+    await Session.updateMany(
+      {
+        userId: user._id,
+        isActive: true,
+      },
+      {
+        $set: {
+          isActive: false,
+          loggedOutAt: new Date(),
+        },
+      }
+    );
 
     return true;
   }
@@ -514,6 +608,7 @@ class AuthService {
 
     return true;
   }
+
   async changePassword(userId, currentPassword, newPassword) {
     const user = await User.findById(userId);
 
@@ -555,6 +650,7 @@ class AuthService {
 
     return true;
   }
+
   async updateUserRoles(userId, roles) {
     const user = await User.findById(userId);
 

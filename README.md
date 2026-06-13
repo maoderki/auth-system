@@ -62,6 +62,10 @@ Frontend içermez. Sadece backend authentication ve authorization altyapısı sa
 
 ✅ Verification Email Resend
 
+✅ Forgot Password
+
+✅ Password Reset
+
 ---
 
 ## Installation
@@ -100,6 +104,12 @@ Kurulum sırasında aşağıdaki bilgiler sorulur:
 * Admin şifresi
 * Login yöntemi
 * Public registration ayarı
+* Email verification ayarı
+* Mail provider seçimi (optional)
+* SMTP bilgileri (optional)
+* App name
+* Frontend URL
+* App logo URL (optional)
 
 Kurulum tamamlandıktan sonra:
 
@@ -180,7 +190,7 @@ Body:
 }
 ```
 
-Kayıt sonrasında kullanıcıya doğrulama e-postası gönderilir.
+* Email verification özelliği aktifse kullanıcıya doğrulama e-postası gönderilir.
 
 ---
 
@@ -447,6 +457,77 @@ Notlar:
 * Sadece doğrulanmamış hesaplar için çalışır.
 * Yeni token oluşturulduğunda eski kullanılmamış tokenlar iptal edilir.
 * Kullanıcı zaten doğrulanmışsa AUTH_EMAIL_ALREADY_VERIFIED döner.
+
+---
+
+## Forgot Password
+
+Şifre sıfırlama maili gönderir.
+
+```http
+POST /forgot-password
+```
+
+Body:
+
+```json
+{
+  "email": "test@test.com"
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_PASSWORD_RESET_EMAIL_SENT",
+  "data": {}
+}
+```
+
+Notlar:
+
+* Güvenlik amacıyla kullanıcı var olsa da olmasa da aynı cevap döndürülür.
+* Bu davranış user enumeration saldırılarını engeller.
+* Eğer e-posta adresi sistemde kayıtlıysa şifre sıfırlama bağlantısı gönderilir.
+
+---
+
+## Reset Password
+
+Şifre sıfırlama tokenı ile yeni şifre belirler.
+
+```http
+POST /reset-password
+```
+
+Body:
+
+```json
+{
+  "token": "RESET_TOKEN",
+  "newPassword": "123456789"
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "AUTH_PASSWORD_RESET_SUCCESS",
+  "data": {}
+}
+```
+
+Notlar:
+
+* Reset token tek kullanımlıktır.
+* Süresi dolan tokenlar kullanılamaz.
+* Şifre güncellendikten sonra tüm aktif sessionlar sonlandırılır.
+* Token version artırılır.
+* Eski access ve refresh tokenlar geçersiz hale gelir.
 
 ---
 
@@ -1052,6 +1133,8 @@ updatedAt
 * Single-use Verification Tokens
 * Token Expiration
 * Token Hashing
+* Password Reset
+* Single-use Password Reset Tokens
 
 ---
 
@@ -1071,9 +1154,8 @@ updatedAt
 * [x] Brute-force koruması
 * [x] Email verification
 * [x] Verification email resend
-
-* [ ] Forgot password
-* [ ] Reset password
+* [x] Forgot password
+* [x] Reset password
 
 ## Yetkilendirme
 

@@ -162,6 +162,54 @@ async function resendVerificationEmail(req, res) {
   }
 }
 
+async function forgotPassword(req, res) {
+  try {
+    await authService.forgotPassword(req.body.email);
+
+    return success(
+      res,
+      Codes.AUTH_PASSWORD_RESET_EMAIL_SENT,
+      {},
+      200
+    );
+  } catch (error) {
+    return fail(
+      res,
+      error.code || Codes.AUTH_INTERNAL_ERROR,
+      400
+    );
+  }
+}
+
+async function resetPassword(req, res) {
+  try {
+    await authService.resetPassword(
+      req.body.token,
+      req.body.newPassword
+    );
+
+    return success(
+      res,
+      Codes.AUTH_PASSWORD_RESET_SUCCESS,
+      {},
+      200
+    );
+  } catch (error) {
+    const status =
+      error.code === Codes.AUTH_PASSWORD_RESET_TOKEN_INVALID
+        ? 400
+        : error.code === Codes.AUTH_USER_NOT_FOUND
+          ? 404
+          : 400;
+
+    return fail(
+      res,
+      error.code || Codes.AUTH_INTERNAL_ERROR,
+      status
+    );
+  }
+}
+
 async function changePassword(req, res) {
   try {
     await authService.changePassword(
@@ -286,6 +334,8 @@ module.exports = {
   logoutSession,
   verifyEmail,
   resendVerificationEmail,
+  forgotPassword,
+  resetPassword,
   changePassword,
   updateUserRoles,
   listUsers,

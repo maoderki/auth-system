@@ -101,6 +101,26 @@ const resendVerificationSchema = z.object({
     .max(120),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email()
+    .max(120),
+});
+
+const resetPasswordSchema = z.object({
+  token: z
+    .string()
+    .min(32)
+    .max(256),
+
+  newPassword: z
+    .string()
+    .min(8)
+    .max(128),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -111,4 +131,6 @@ module.exports = {
   updateUserStatusSchema,
   adminUpdatePasswordSchema,
   resendVerificationSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 };
