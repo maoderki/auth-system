@@ -2,7 +2,7 @@
 
 Tak-çalıştır Node.js + MongoDB Authentication System.
 
-JWT, Refresh Token, Session Management ve Role-Based Authorization desteği ile gelen bağımsız auth modülü.
+JWT, Refresh Token, Session Management ve Role-Based Authorization desteği ile gelen bağımsız auth server.
 
 Frontend içermez. Sadece backend authentication ve authorization altyapısı sağlar.
 
@@ -68,32 +68,35 @@ Frontend içermez. Sadece backend authentication ve authorization altyapısı sa
 
 ---
 
-## Installation
+# Installation
 
-## Gereksinimler
+## Requirements
 
 * Node.js 18+
 * MongoDB Atlas veya MongoDB Server
-* NPM
 
----
-
-## Paketleri Kur
+## Clone Repository
 
 ```bash
-npm install auth-system
+git clone https://github.com/maoderki/auth-system.git
+
+cd auth-system
 ```
 
----
-
-## Setup Wizard
-
-Setup wizard gerekli .env dosyasını otomatik oluşturur.
-Secret değerleri otomatik üretilir.
-Admin kullanıcı setup sırasında oluşturulur.
+## Install Dependencies
 
 ```bash
-npx auth-system-setup
+npm install
+```
+
+## Run Setup Wizard
+
+* Setup wizard gerekli .env dosyasını otomatik oluşturur.
+* Secret değerleri otomatik üretilir.
+* Admin kullanıcı setup sırasında oluşturulur.
+
+```bash
+npm run setup
 ```
 
 Kurulum sırasında aşağıdaki bilgiler sorulur:
@@ -120,22 +123,11 @@ Kurulum tamamlandıktan sonra:
 
 dosyası otomatik oluşturulur.
 
-## Usage
-
-```bash
-npm install auth-system
-npx auth-system-setup
-npx auth-system-start
-```
-
 ## Start Server
 
 ```bash
-npx auth-system-start
+npm start
 ```
-
-Default URL:
-http://localhost:4000
 
 ---
 
@@ -1166,7 +1158,6 @@ updatedAt
 
 ## Paketleme
 
-* [x] NPM package
 * [ ] Complete documentation
 * [ ] Example projects
 * [ ] One-command installation
